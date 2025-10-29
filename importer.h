@@ -13,6 +13,7 @@
 #include <libloaderapi.h>
 #include <errhandlingapi.h>
 #include <psapi.h>
+#include <stdio.h>
 
 template<typename T>
 T tryImportSymbol(const char *funcName)
