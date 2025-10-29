@@ -13,7 +13,9 @@
 #include <libloaderapi.h>
 #include <errhandlingapi.h>
 #include <psapi.h>
-#include <stdio.h>
+#include <cstdio>
+
+static void empty() {}
 
 template<typename T>
 T tryImportSymbol(const char *funcName)
@@ -47,10 +49,26 @@ T tryImportSymbol(const char *funcName)
         fprintf(stderr, "Can't enumerate loaded modules (error %d)\n", GetLastError());
         exit(1);
     }
+    
+    /* Get a pointer to the current DLL to exclude it from the search.
+       If we don't do it, we could find the same symbol we're exporting and
+       end up in an infinite recursion.
+       To do so, we use GetModuleHandleEx to get the DLL starting from an
+       address within it, and we use the address of an empty function */
+    HMODULE thisDll=NULL;
+    result = GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCTSTR)empty, &thisDll);
+    if(!result)
+    {
+        fprintf(stderr, "Can't get a handle to current DLL (error %d)\n", GetLastError());
+        exit(1);
+    }
 
     int num_modules = cbNeeded / sizeof(HMODULE); /* Actual number of loaded modules */
     for(int i = 0; i < num_modules; i++)
     {
+        /* skip searching in current DLL */
+        if(loaded_modules[i] == thisDll) continue;
+        
         T pfn = reinterpret_cast<T>(GetProcAddress(loaded_modules[i], funcName));
         if(pfn) return pfn;
     }

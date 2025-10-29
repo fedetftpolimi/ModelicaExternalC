@@ -1,26 +1,14 @@
 
 #include "ModelicaUtilities.h"
 #include "importer.h"
+#include <cstdlib>
 
 extern "C" {
 
-//Declaration of functions that need to be exported by tool vendors
-//These declarations are required to compile for Linux, for Windows
-//they aren't really required
-void ModelicaMessageImpl(const char *str);
-void ModelicaVFormatMessageImpl(const char *str, va_list args);
-void ModelicaErrorImpl(const char *str);
-void ModelicaWarningImpl(const char *str);
-void ModelicaVFormatWarningImpl(const char *str, va_list args);
-void ModelicaVFormatErrorImpl(const char *str, va_list args);
-char* ModelicaAllocateStringImpl(size_t len);
-char* ModelicaDuplicateStringImpl(const char *str);
-char* ModelicaAllocateStringWithErrorReturnImpl(size_t len);
-
 void ModelicaMessage(const char *str)
 {
-    IMPORT(void (*)(const char *), ModelicaMessageImpl);
-    ModelicaMessageImpl(str);
+    auto ptr=tryImportSymbol<void (*)(const char *)>("ModelicaMessage");
+    if(ptr!=nullptr) ptr(str);
 }
 
 void ModelicaFormatMessage(const char *str, ...)
@@ -33,20 +21,22 @@ void ModelicaFormatMessage(const char *str, ...)
 
 void ModelicaVFormatMessage(const char *str, va_list args)
 {
-    IMPORT(void (*)(const char *, va_list), ModelicaVFormatMessageImpl);
-    ModelicaVFormatMessageImpl(str, args);
+    auto ptr=tryImportSymbol<void (*)(const char *, va_list)>("ModelicaVFormatMessage");
+    if(ptr!=nullptr) ptr(str, args);
 }
 
 void ModelicaError(const char *str)
 {
-    IMPORT(void (*)(const char *), ModelicaErrorImpl);
-    ModelicaErrorImpl(str);
+    auto ptr=tryImportSymbol<void (*)(const char *)>("ModelicaError");
+    if(ptr!=nullptr) ptr(str);
+    //ModelicaError must not return even if the pointer is null
+    std::abort();
 }
 
 void ModelicaWarning(const char *str)
 {
-    IMPORT(void (*)(const char *), ModelicaWarningImpl);
-    ModelicaWarningImpl(str);
+    auto ptr=tryImportSymbol<void (*)(const char *)>("ModelicaWarning");
+    if(ptr!=nullptr) ptr(str);
 }
 
 void ModelicaFormatWarning(const char *str, ...)
@@ -59,8 +49,8 @@ void ModelicaFormatWarning(const char *str, ...)
 
 void ModelicaVFormatWarning(const char *str, va_list args)
 {
-    IMPORT(void (*)(const char *, va_list), ModelicaVFormatWarningImpl);
-    ModelicaVFormatWarningImpl(str, args);
+    auto ptr=tryImportSymbol<void (*)(const char *, va_list)>("ModelicaVFormatWarning");
+    if(ptr!=nullptr) ptr(str, args);
 }
 
 void ModelicaFormatError(const char *str, ...)
@@ -73,26 +63,31 @@ void ModelicaFormatError(const char *str, ...)
 
 void ModelicaVFormatError(const char *str, va_list args)
 {
-    IMPORT(void (*)(const char *, va_list), ModelicaVFormatErrorImpl);
-    ModelicaVFormatErrorImpl(str, args);
+    auto ptr=tryImportSymbol<void (*)(const char *, va_list)>("ModelicaVFormatError");
+    if(ptr!=nullptr) ptr(str, args);
+    //ModelicaVFormatError must not return even if the pointer is null
+    std::abort();
 }
 
 char* ModelicaAllocateString(size_t len)
 {
-    IMPORT(char *(*)(size_t), ModelicaAllocateStringImpl);
-    return ModelicaAllocateStringImpl(len);
+    auto ptr=tryImportSymbol<char *(*)(size_t)>("ModelicaAllocateString");
+    if(ptr!=nullptr) return ptr(len);
+    else return nullptr;
 }
 
 char* ModelicaDuplicateString(const char *str)
 {
-    IMPORT(char *(*)(const char *),ModelicaDuplicateStringImpl);
-    return ModelicaDuplicateStringImpl(str);
+    auto ptr=tryImportSymbol<char *(*)(const char *)>("ModelicaDuplicateString");
+    if(ptr!=nullptr) return ptr(str);
+    else return nullptr;
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len)
 {
-    IMPORT(char *(*)(size_t),ModelicaAllocateStringWithErrorReturnImpl);
-    return ModelicaAllocateStringWithErrorReturnImpl(len);
+    auto ptr=tryImportSymbol<char *(*)(size_t)>("ModelicaAllocateStringWithErrorReturn");
+    if(ptr!=nullptr) return ptr(len);
+    else return nullptr;
 }
     
 } //extern "C"
